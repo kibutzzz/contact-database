@@ -3,13 +3,14 @@ package com.arvores.ordenacao.contatos.repository;
 import com.arvores.ordenacao.contatos.domain.Contact;
 import com.arvores.ordenacao.contatos.utility.ArvoreAvl;
 import com.arvores.ordenacao.contatos.utility.ContactFileReader;
-import com.arvores.ordenacao.contatos.utility.No;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.Comparator.*;
+import static java.util.Comparator.comparing;
 
 @Repository
 public class ContactRepository {
@@ -38,23 +39,32 @@ public class ContactRepository {
   }
 
   public List<Contact> findByName(String name) {
-     return nameIndexedTree.inorder().stream().map(No::getChave).collect(Collectors.toList());
+    return nameIndexedTree.buscar((contact, key) -> {
+      if (contact.getName().startsWith(key.getName())) {
+        return 0;
+      }
+
+      return contact.getName().compareTo(key.getName());
+    }, new Contact(0, 0, name, null, null));
   }
 
-  public List<Contact> findByBirthDate(String name) {
-    return birthDateIndexedTree.inorder().stream().map(No::getChave).collect(Collectors.toList());
+  public List<Contact> findByBirthDate(LocalDate minDate, LocalDate maxDate) {
+
+    return birthDateIndexedTree
+        .buscar((contact, key) -> {
+          if (contact.getBirthDate().isAfter(key.getBirthDate())) {
+            return 0;
+          }
+
+          return contact.getBirthDate().compareTo(key.getBirthDate());
+        }, new Contact(0, 0, null, minDate, null))
+        .stream().filter(contact -> contact.getBirthDate().isBefore(maxDate))
+        .collect(Collectors.toList());
   }
 
-  public List<Contact> findByCpf(String cpf) {
-    return cpfIndexedTree.inorder().stream().map(No::getChave).collect(Collectors.toList());
-  }
-
-  public Contact saveContact(Contact contact) {
-    cpfIndexedTree.inserir(contact);
-    nameIndexedTree.inserir(contact);
-    birthDateIndexedTree.inserir(contact);
-
-    return contact;
+  public List<Contact> findByCpf(long cpf) {
+    return cpfIndexedTree.buscar(Comparator.comparing(Contact::getCpf),
+        new Contact(cpf, 0, null, null, null));
   }
 
 }

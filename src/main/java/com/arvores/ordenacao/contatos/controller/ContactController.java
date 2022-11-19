@@ -1,39 +1,97 @@
 package com.arvores.ordenacao.contatos.controller;
 
 
-import com.arvores.ordenacao.contatos.domain.Contact;
 import com.arvores.ordenacao.contatos.repository.ContactRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Scanner;
 
-@RestController
+@Component
 @RequiredArgsConstructor
-public class ContactController {
+public class ContactController implements CommandLineRunner {
+
+
+  private final ConfigurableApplicationContext context;
+  private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   private final ContactRepository repository;
+  private boolean isRunning = true;
 
+  @Override
+  public void run(String... args) {
 
-  @GetMapping("/name")
-  public List<Contact> findByName() {
-    return repository.findByName("");
-  }
-  @GetMapping("/cpf")
-  public List<Contact> findByCpf() {
-    return repository.findByCpf("");
-  }
-  @GetMapping("/birthDate")
-  public List<Contact> findByBirthDate() {
-    return repository.findByBirthDate("");
+    while (isRunning) {
+      chooseOption();
+    }
+
+    context.close();
   }
 
-  @PostMapping
-  public Contact saveContact(@RequestBody Contact contact) {
-    return repository.saveContact(contact);
+  public void printMenu() {
+    System.out.println("\n\n1 - Buscar cpf \n" +
+        "2 - Buscar nome \n" +
+        "3 - Buscar data nascimento \n" +
+        "4 - Sair \n");
   }
+
+  public void chooseOption() {
+    Scanner input = new Scanner(System.in);
+    printMenu();
+    System.out.println("\nEscolha uma opção: ");
+    int option = input.nextInt();
+
+    switch (option) {
+      case 1:
+        buscarCpf();
+        break;
+      case 2:
+        buscarNome();
+        break;
+      case 3:
+        buscarPorDatas();
+        break;
+      case 4:
+        System.out.println("\nEncerrando operação...");
+        this.isRunning = false;
+        break;
+      default:
+        System.out.println("\nOpção Inválida, escolha outra! \n");
+        break;
+    }
+  }
+
+  private void buscarCpf() {
+    Scanner input = new Scanner(System.in);
+    System.out.println("Digite CPF: \n");
+    final var cpf = input.nextLine();
+
+    repository.findByCpf(Long.parseLong(cpf)).forEach(System.out::println);
+  }
+
+
+  private void buscarNome() {
+    Scanner input = new Scanner(System.in);
+    System.out.println("Digite Nome: \n");
+    final var name = input.nextLine();
+
+    repository.findByName(name).forEach(System.out::println);
+  }
+
+
+  private void buscarPorDatas() {
+    Scanner input = new Scanner(System.in);
+    System.out.println("Digite data minima: \n");
+    final var minDate = LocalDate.parse(input.nextLine(), FORMATTER);
+    System.out.println("Digite data maxima: \n");
+    final var maxDate = LocalDate.parse(input.nextLine(), FORMATTER);
+
+    repository.findByBirthDate(minDate, maxDate).forEach(System.out::println);
+  }
+
 
 }

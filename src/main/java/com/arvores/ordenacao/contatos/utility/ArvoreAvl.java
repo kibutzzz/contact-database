@@ -1,14 +1,21 @@
 package com.arvores.ordenacao.contatos.utility;
 
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ArvoreAvl<T> {
 
   protected No<T> raiz;
 
   private Comparator<T> comparator;
+
+  private ArvoreAvl(No<T> raiz, Comparator<T> comparator) {
+    this.raiz = raiz;
+    this.comparator = comparator;
+  }
 
   public ArvoreAvl(Comparator<T> comparator) {
     this.comparator = comparator;
@@ -82,67 +89,30 @@ public class ArvoreAvl<T> {
     }
   }
 
-  public void remover(T k) {
-    removerAVL(this.raiz, k);
+  public List<T> buscar(Comparator<T> comparator, T k) {
+
+    final var node = buscar(this.raiz, k, comparator);
+
+    return new ArvoreAvl<>(node, comparator).inorder().stream()
+        .map(No::getChave)
+        .filter(contact -> comparator.compare(contact, k) == 0)
+        .collect(Collectors.toList());
   }
 
-  private void removerAVL(No<T> atual, T k) {
+  private No<T> buscar(No<T> atual, T k, Comparator<T> comparator) {
     if (atual == null) {
-      return;
-
+      return null;
     } else {
 
       if (comparator.compare(atual.getChave(), k) > 0) {
-        removerAVL(atual.getEsquerda(), k);
+        return buscar(atual.getEsquerda(), k, comparator);
 
       } else if (comparator.compare(atual.getChave(), k) < 0) {
-        removerAVL(atual.getDireita(), k);
+        return buscar(atual.getDireita(), k, comparator);
 
-      } else if (comparator.compare(atual.getChave(), k) == 0) {
-        removerNoEncontrado(atual);
       }
+      return atual;
     }
-  }
-
-  private void removerNoEncontrado(No<T> aRemover) {
-    No<T> r;
-
-    if (aRemover.getEsquerda() == null || aRemover.getDireita() == null) {
-
-      if (aRemover.getPai() == null) {
-        this.raiz = null;
-        aRemover = null;
-        return;
-      }
-      r = aRemover;
-
-    } else {
-      r = sucessor(aRemover);
-      aRemover.setChave(r.getChave());
-    }
-
-    No<T> p;
-    if (r.getEsquerda() != null) {
-      p = r.getEsquerda();
-    } else {
-      p = r.getDireita();
-    }
-
-    if (p != null) {
-      p.setPai(r.getPai());
-    }
-
-    if (r.getPai() == null) {
-      this.raiz = p;
-    } else {
-      if (r == r.getPai().getEsquerda()) {
-        r.getPai().setEsquerda(p);
-      } else {
-        r.getPai().setDireita(p);
-      }
-      verificarBalanceamento(r.getPai());
-    }
-    r = null;
   }
 
   private No<T> rotacaoEsquerda(No<T> inicial) {
@@ -213,23 +183,6 @@ public class ArvoreAvl<T> {
   private No<T> duplaRotacaoDireitaEsquerda(No<T> inicial) {
     inicial.setDireita(rotacaoDireita(inicial.getDireita()));
     return rotacaoEsquerda(inicial);
-  }
-
-  private No<T> sucessor(No<T> q) {
-    if (q.getDireita() != null) {
-      var r = q.getDireita();
-      while (r.getEsquerda() != null) {
-        r = r.getEsquerda();
-      }
-      return r;
-    } else {
-      var p = q.getPai();
-      while (p != null && q == p.getDireita()) {
-        q = p;
-        p = q.getPai();
-      }
-      return p;
-    }
   }
 
   private int altura(No<T> atual) {
